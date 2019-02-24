@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Startup.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Giraffe" Version="3.6.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.2" />
+    <PackageReference Include="Thoth.Json.Giraffe" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Json2FSharp.Core\Json2FSharp.Core.fsproj" />
+  </ItemGroup>
+
+</Project>

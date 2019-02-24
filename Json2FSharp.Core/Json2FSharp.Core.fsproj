@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="FSharp\FsharpCommon.fs" />
+    <Compile Include="FSharp\FsharpNewtonsoftHandler.fs" />
+    <Compile Include="FSharp\FsharpSimpleTypeHandler.fs" />
+    <Compile Include="JsonParser.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FParsec" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>
