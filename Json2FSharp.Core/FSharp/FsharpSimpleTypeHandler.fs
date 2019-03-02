@@ -3,16 +3,14 @@ module FsharpSimpleTypeHandler
 
 open Types
 
-let private fixName = FsharpCommon.fixName
-
-let private fieldToView (field: Field) = sprintf "%s: %s" (field.Name |> fixName) (field.Template.Replace("%s", field.Type))
+let private fieldToView (field: Field) = sprintf "%s: %s" field.Name (field.Template.Replace("%s", field.Type))
 
 let private typeToView (typeDef: Type) =
     match typeDef.Fields with
     | [] -> sprintf "type %s = { }" typeDef.Name
     | [x] -> sprintf "type %s = { %s }" typeDef.Name (fieldToView x)
     | xs -> 
-        let head = sprintf "type %s =" (typeDef.Name |> fixName)
+        let head = sprintf "type %s =" typeDef.Name
 
         let fieldBlock =
             xs 

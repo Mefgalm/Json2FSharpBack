@@ -9,6 +9,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Json2FSharp.Tests", "Json2F
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Json2FSharp.Core", "Json2FSharp.Core\Json2FSharp.Core.fsproj", "{4675E9EC-F157-4F34-BE8E-427B0FFA5318}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Json2FSharp.Console", "Json2FSharp.Console\Json2FSharp.Console.fsproj", "{EF9C8AA9-6D5F-44C8-9FEE-4BBF7043089E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{4675E9EC-F157-4F34-BE8E-427B0FFA5318}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4675E9EC-F157-4F34-BE8E-427B0FFA5318}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4675E9EC-F157-4F34-BE8E-427B0FFA5318}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF9C8AA9-6D5F-44C8-9FEE-4BBF7043089E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF9C8AA9-6D5F-44C8-9FEE-4BBF7043089E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF9C8AA9-6D5F-44C8-9FEE-4BBF7043089E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF9C8AA9-6D5F-44C8-9FEE-4BBF7043089E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

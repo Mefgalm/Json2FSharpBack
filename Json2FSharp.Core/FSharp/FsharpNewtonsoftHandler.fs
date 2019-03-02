@@ -3,22 +3,25 @@ module FsharpNewtonsoftHandler
 
 open Types
 
-let private fixName = FsharpCommon.fixName
-
 let private fieldToView (field: Field) = 
-    let jsonPropertyAttributes fieldName = sprintf "[<JsonProperty(%s)>]" fieldName
+    let jsonPropertyAttributes fieldName = sprintf "[<JsonProperty(\"%s\")>]" fieldName
+    let fieldRow name fieldType = sprintf "%s: %s" name fieldType
 
-    sprintf "%s\n%s: %s" (jsonPropertyAttributes field.Name) (field.Name |> fixName) field.Type
+    [
+        jsonPropertyAttributes field.RawName
+        fieldRow field.Name (field.Template.Replace("%s", field.Type))
+    ]
 
-let private typeToView (typeDef: Type) =    
-    let head = sprintf "type %s =" (typeDef.Name |> fixName)
+let private typeToView (typeDef: Type) =
+    let head = sprintf "type %s =" typeDef.Name
 
     match typeDef.Fields with
     | [] -> sprintf "%s {}" head
     | fields -> 
         let fieldWithAttrs = 
             fields
-            |> List.map fieldToView        //TODO this doesn't work fix 
+            |> List.map fieldToView
+            |> List.reduce (fun x y -> x @ [""] @ y)
 
         let fieldBlock =
             fieldWithAttrs
@@ -39,7 +42,4 @@ let private typeToView (typeDef: Type) =
 let toView = 
     function 
     | Ok types -> Ok (types |> List.map typeToView |> List.reduce (sprintf "%s\n\n%s"))
-    | Error msg -> Error msg
-    
-
-
+    | Error msg -> Error msg    

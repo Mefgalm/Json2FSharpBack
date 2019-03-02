@@ -4,6 +4,7 @@ type Field =
     { TypeId: string option
       Name: string
       Type: string
+      RawName: string
       Template: string }
 
 type Type =
