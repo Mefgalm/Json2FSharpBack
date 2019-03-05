@@ -6,6 +6,7 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open JsonParserCore
+open Microsoft.AspNetCore.Cors
 
 type ListGeneratorType =
     | List
@@ -56,8 +57,13 @@ let webApp =
 
 let configureApp (app : IApplicationBuilder) =
     app.UseGiraffe webApp
+    app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
+                                b.AllowAnyHeader() |> ignore
+                                b.AllowAnyOrigin() |> ignore
+                                b.AllowAnyMethod() |> ignore)) |> ignore
 
 let configureServices (services : IServiceCollection) =
+    services.AddCors() |> ignore
     services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
     services.AddGiraffe() |> ignore
 
