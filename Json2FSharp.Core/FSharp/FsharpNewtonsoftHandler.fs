@@ -14,6 +14,7 @@ let private fieldToView (field: Field) =
 
 let private typeToView (typeDef: Type) =
     let head = sprintf "type %s =" typeDef.Name
+    let ident = "    "
 
     match typeDef.Fields with
     | [] -> sprintf "%s {}" head
@@ -34,7 +35,7 @@ let private typeToView (typeDef: Type) =
                                     sprintf "  %s }" checkFirst
                                 else checkFirst
                             | _ -> sprintf "  %s" x)
-            |> List.map (sprintf "\t%s")        
+            |> List.map (sprintf "%s%s" ident)        
             |> List.reduce (sprintf "%s\n%s")
 
         sprintf "%s\n%s" head fieldBlock

@@ -6,6 +6,8 @@ open Types
 let private fieldToView (field: Field) = sprintf "%s: %s" field.Name (field.Template.Replace("%s", field.Type))
 
 let private typeToView (typeDef: Type) =
+    let ident = "    "
+
     match typeDef.Fields with
     | [] -> sprintf "type %s = { }" typeDef.Name
     | [x] -> sprintf "type %s = { %s }" typeDef.Name (fieldToView x)
@@ -20,7 +22,7 @@ let private typeToView (typeDef: Type) =
                             | 0 -> sprintf "{ %s" x
                             | index when index = typeDef.Fields.Length - 1 -> sprintf "  %s }" x
                             | _ -> sprintf "  %s" x)
-            |> List.map (sprintf "\t%s")        
+            |> List.map (sprintf "%s%s" ident)        
             |> List.reduce (sprintf "%s\n%s")
 
         sprintf "%s\n%s" head fieldBlock

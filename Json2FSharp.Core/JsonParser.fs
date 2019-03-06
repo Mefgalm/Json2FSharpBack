@@ -60,7 +60,7 @@ do jvalueRef := choice [jobject
                         jnull
                         jfalse]
 
-let json = ws >>. jvalue .>> ws .>> eof
+let json = ws >>. jobject .>> ws .>> eof
 
 let parseJsonString str = run json str
 
@@ -96,48 +96,39 @@ let checkNumberOption = List.exists (isNull <||> isNumberOption)
 let checkBoolOption = List.exists (isNull <||> isBoolOption)
 let checkDateTimeOption = List.exists (isNull <||> isDateTimeOption)
 
-let (|EmptyList|_|) =
-    function 
+let (|EmptyList|_|) = function 
     | [] -> Some EmptyList
     | _ -> None
 
-let (|NullList|_|) =
-    function 
+let (|NullList|_|) = function 
     | list when list |> List.forall isNull -> Some ^ NullList
     | _ -> None
 
-let (|NumberList|_|) =
-    function 
+let (|NumberList|_|) = function 
     | list when list |> List.forall (isNumber <||> isNull) -> Some ^ NumberList list
     | _ -> None
 
-let (|StringList|_|) =
-    function 
+let (|StringList|_|) = function 
     | list when list |> List.forall (isString <||> isNull) -> Some ^ StringList list
     | _ -> None
 
-let (|DateTimeOffsetList|_|) =
-    function 
+let (|DateTimeOffsetList|_|) = function 
     | list when list |> List.forall (isDateTimeOffset <||> isNull) -> Some ^ DateTimeOffsetList list
     | _ -> None
 
-let (|BoolList|_|) =
-    function 
+let (|BoolList|_|) = function 
     | list when list |> List.forall (isBool <||> isNull) -> Some ^ BoolList list
     | _ -> None
 
-let (|ObjectList|_|) =
-    function 
+let (|ObjectList|_|) = function 
     | list when list |> List.forall (isObject <||> isNull) -> Some ^ ObjectList list
     | _ -> None
 
-let (|ListList|_|) =
-    function 
+let (|ListList|_|) = function 
     | list when list |> List.forall (isList <||> isNull) -> Some ^ ListList list
     | _ -> None
 
-let (|ArrayList|_|) =
-    function 
+let (|ArrayList|_|) = function 
     | list when list |> List.forall (isArray <||> isNull) -> Some ^ ArrayList list
     | _ -> None
 
@@ -207,17 +198,6 @@ let rec aggreagateListToSingleType jsonList =
                                     | JDateTimeOffsetOption -> true
                                     | _ -> false) -> JEmptyObjectOption
     | _ -> JEmptyObject
-
-let private castArray json = 
-    let rec recCastArray json =
-         json 
-         |> List.map(fun (key, value) ->
-                     match value with
-                     | JObject list -> key, JObject ^ recCastArray list
-                     | JList list -> key, JArray ^ aggreagateListToSingleType list
-                     | _ -> key, value)   
-    
-    recCastArray json |> List.head
 
 let rec private extractObject json =
     match json with
@@ -299,9 +279,9 @@ let private renameAllField types =
                                              | None -> field
                                              | Some value -> { field with Type = value.Name }) })
 
-let private idGenerator () = Guid.NewGuid().ToString();
+let private idGenerator () = Guid.NewGuid().ToString()
                                             
-let private buildTypes rootObjectName fixName collectionGenerator json =    
+let private buildTypes rootObjectName fixName collectionGenerator json =  
     let build rootObjectName fixName collectionGenerator json =
         let rec tailDeep acc jobjs =
             match jobjs with
@@ -310,8 +290,13 @@ let private buildTypes rootObjectName fixName collectionGenerator json =
             | (name, id, (JObjectOption list))::xs ->
                 let newType = 
                     list
-                    |> List.distinctBy fst
-                    |> List.map (fun (key, value) -> fieldHandler fixName idGenerator collectionGenerator key value, value)
+                    |> List.map (fun (key, value) ->
+                        let row = 
+                            match value with
+                            | JList l -> JArray ^ aggreagateListToSingleType l
+                            | _ -> value
+                        fieldHandler fixName idGenerator collectionGenerator key row, row)
+                    |> List.distinctBy (fun (field, _) -> field.Name)
 
                 let newJobjs = 
                     newType 
@@ -321,7 +306,7 @@ let private buildTypes rootObjectName fixName collectionGenerator json =
                 tailDeep ((typeHandler fixName id name (newType |> List.map fst))::acc) (newJobjs @ xs)
             | _ -> failwith "unexpected"
 
-        let types = tailDeep [] [castArray [rootObjectName |> fixName, json] |> fun (x, y) -> (x, Some ^ idGenerator(), y)]
+        let types = tailDeep [] [rootObjectName |> fixName, Some ^ idGenerator(), json]
 
         types 
         |> generateUniqueNames (sprintf "%s%d")
