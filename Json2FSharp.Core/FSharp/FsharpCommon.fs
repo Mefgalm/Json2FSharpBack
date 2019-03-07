@@ -9,6 +9,7 @@ let form =  "string"
 let listGenerator x = "%s list".Replace("%s", x)
 let arrayGenerator x = "%s array".Replace("%s", x)
 let charpListGenerator x = "List<%s>".Replace("%s", x)
+let seqGenerator x = "seq<%s>".Replace("%s", x)
 
 let fixName (name: string) =
     let getFirstChar (name: string) = name.Chars 0
@@ -18,10 +19,9 @@ let fixName (name: string) =
         |> Seq.ofArray 
         |> Seq.map(fun (x: string) -> if x.Length > 1 then x |> toUpperFirst else x)
         |> Seq.fold(+) ""
+        |> function "" -> "Empty" | x -> x
 
-    if newFieldName.Length = 0 then failwith "Name should be not empty"
-
-    if (not <| Char.IsLetter (getFirstChar name)) && getFirstChar name <> '_' then
+    if (not <| Char.IsLetter (getFirstChar newFieldName)) && getFirstChar newFieldName <> '_' then
         "The" + newFieldName |> toUpperFirst
     else
         newFieldName |> toUpperFirst

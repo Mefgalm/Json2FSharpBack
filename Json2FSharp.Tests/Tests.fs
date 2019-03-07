@@ -40,6 +40,26 @@ let ``Should fail if root object name is empty`` () =
     | _ -> fail ()
 
 [<Fact>]
+let ``Should fix if field is empty name`` () =
+    let input = @"{ """": 3 }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Empty"; Type = "int64"; Template = "%s" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should fix if field is contains only wrong characters`` () =
+    let input = @"{ ""$%^&"": 3 }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Empty"; Type = "int64"; Template = "%s" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
 let ``Should and The in begin of rootObject`` () =
     let input = "{}"
 
