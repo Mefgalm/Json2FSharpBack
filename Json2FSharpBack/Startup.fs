@@ -69,6 +69,7 @@ let webApp =
 
 let configureApp (app : IApplicationBuilder) =
     app.UseGiraffe webApp
+    app.UsePathBase(PathString "api") |> ignore
     app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
                                 b.AllowAnyHeader() |> ignore
                                 b.AllowAnyOrigin() |> ignore
