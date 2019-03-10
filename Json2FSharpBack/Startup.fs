@@ -61,15 +61,15 @@ let generationHandler =
 
 let webApp =
     choose [
-        POST >=> 
-            choose [
-                route "/generate" >=> generationHandler
-            ]
+        subRouteCi "/api" (
+            POST >=> 
+                choose [
+                    route "/generate" >=> generationHandler
+            ])
     ]
 
 let configureApp (app : IApplicationBuilder) =
     app.UseGiraffe webApp
-    app.UsePathBase(PathString "api") |> ignore
     app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
                                 b.AllowAnyHeader() |> ignore
                                 b.AllowAnyOrigin() |> ignore
