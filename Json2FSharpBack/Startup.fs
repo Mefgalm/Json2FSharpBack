@@ -9,6 +9,7 @@ open JsonParserCore
 open Microsoft.AspNetCore.Cors
 open System.Collections.Generic
 open Microsoft.Extensions.Primitives
+open Microsoft.Extensions.Logging
 
 type ListGeneratorType =
     | List
@@ -68,8 +69,15 @@ let webApp =
             ])
     ]
 
+let errorHandler (ex : Exception) (logger : ILogger) =
+    logger.LogError(EventId(), ex, "An unhandled exception has occurred while executing the request.")
+    clearResponse
+    >=> ServerErrors.INTERNAL_ERROR ex.Message
+
 let configureApp (app : IApplicationBuilder) =
-    app.UseGiraffe webApp
+    app.UseGiraffeErrorHandler(errorHandler)
+       .UseGiraffe webApp
+
     app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
                                 b.AllowAnyHeader() |> ignore
                                 b.AllowAnyOrigin() |> ignore
@@ -81,12 +89,22 @@ let configureServices (services : IServiceCollection) =
     services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
     services.AddGiraffe() |> ignore
 
+let configureLogging (builder : ILoggingBuilder) =
+    let filter (l : LogLevel) = l.Equals LogLevel.Error
+
+    builder.AddFilter(filter) 
+           .AddConsole()      
+           .AddDebug()        
+
+    |> ignore
+
 [<EntryPoint>]
 let main _ =
     WebHostBuilder()
         .UseKestrel()
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
+        .ConfigureLogging(configureLogging)
         .Build()
         .Run()
     0
