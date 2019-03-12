@@ -60,6 +60,77 @@ let ``Should fix if field is contains only wrong characters`` () =
     | _ -> fail ()
 
 [<Fact>]
+let ``Should treat udentified as null`` () =
+    let input = @"{ ""val"": undefined }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Val"; Type = "Object"; Template = "%s option" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should treat udentified as null in int array`` () =
+    let input = @"{ ""Arr"": [2, undefined] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "int64"; Template = "%s option list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should treat udentified as null in object array`` () =
+    let input = @"{ ""Arr"": [{""val"": 3}, undefined] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Arr"; Fields = [ { Name = "Val"; Type = "int64"; Template = "%s"} ]}
+          {Name = "Root"; Fields = [ { Name = "Arr"; Type = "Arr"; Template = "%s option list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify guid`` () =
+    let input = @"{ ""val"": ""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f"" }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Val"; Type = "Guid"; Template = "%s" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify guid in array`` () =
+    let input = @"{ ""arr"": [""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f""] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "Guid"; Template = "%s list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify guid and string array as string list`` () =
+    let input = @"{ ""arr"": [""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f"", ""some string""] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "string"; Template = "%s list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify guid with null in array`` () =
+    let input = @"{ ""arr"": [""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f"", null] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "Guid"; Template = "%s option list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
 let ``Should and The in begin of rootObject`` () =
     let input = "{}"
 
@@ -408,6 +479,12 @@ let ``Should parse array with int64s and strings`` () =
 [<InlineData("true", "[]")>]
 [<InlineData("\"012-04-23T18:25:43.511Z\"", "{}")>]
 [<InlineData("\"012-04-23T18:25:43.511Z\"", "[]")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "3")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "3.4")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "true")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "\"012-04-23T18:25:43.511Z\"")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "{}")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "[]")>]
 let ``Should parse array with floats and strings`` firstValue secondValue =
     let root = "Root"
     let input = sprintf @"{ ""arr"": [%s, %s] }" firstValue secondValue

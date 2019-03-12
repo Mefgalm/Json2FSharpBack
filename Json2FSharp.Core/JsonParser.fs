@@ -4,6 +4,7 @@ open System
 open FParsec
 open Microsoft.FSharp
 open Types
+open System.Text.RegularExpressions
 
 let ws = spaces 
 let str s = pstring s
@@ -31,15 +32,16 @@ let stringLiteral =
 
 let stringOrDateTime (str: string) =
     if DateTimeOffset.TryParse(str, ref (DateTimeOffset())) then JDateTimeOffset
+    elif Regex.IsMatch(str, "^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$") then JGuid
     else JString
 
-let jstringOrDate = stringLiteral |>> stringOrDateTime
+let jstringOrDateOrGuid = stringLiteral |>> stringOrDateTime
 
 let jnumber = pfloat |>> (fun x -> if x = Math.Floor(x) then JInt else JFloat)
 
 let jtrue  = stringReturn "true"  JBool
 let jfalse = stringReturn "false" JBool
-let jnull  = stringReturn "null" JNull
+let jnull  = (stringReturn "null" JNull <|> stringReturn "undefined" JNull)
 
 let jvalue, jvalueRef = createParserForwardedToRef() 
 
@@ -55,7 +57,7 @@ let jobject = listBetweenStrings "{" "}" keyValue JObject
 do jvalueRef := choice [jobject
                         jlist
                         jnumber
-                        jstringOrDate                        
+                        jstringOrDateOrGuid                        
                         jtrue
                         jnull
                         jfalse]
@@ -71,6 +73,7 @@ let (<&&>) f1 f2 x = f1 x && f2 x
 let isDateTimeOffset = function JDateTimeOffset _ | JDateTimeOffsetOption _ -> true | _ -> false
 let isArray = function JArray _ | JArrayOption _ -> true | _ -> false
 let isList = function JList _ -> true | _ -> false
+let isGuid = function JGuid _ -> true | _ -> false
 let isString = function JStringOption | JString -> true | _ -> false
 let isNumber = function JInt | JFloat| JIntOption | JFloatOption -> true | _ -> false
 let isNull = function JNull -> true | _ -> false
@@ -83,6 +86,7 @@ let isStringOption = function JStringOption -> true | _ -> false
 let isArrayOption = function JArrayOption _ -> true | _ -> false
 let isObjectOption = function JObjectOption _ -> true | _ -> false
 let isNumberOption = function JIntOption | JFloatOption -> true | _ -> false
+let isGuidOption = function JGuidOption -> true | _ -> false
 let typeOrder = 
     function 
     | JInt | JIntOption -> 1 
@@ -90,6 +94,7 @@ let typeOrder =
     | _ -> failwith "Not number type"
 
 let checkStringOption = List.exists (isNull <||> isStringOption)
+let checkGuidOption = List.exists (isNull <||> isGuidOption)
 let checkArrayOption = List.exists (isNull <||> isArrayOption)
 let checkObjectOption = List.exists (isNull <||> isObjectOption)
 let checkNumberOption = List.exists (isNull <||> isNumberOption)
@@ -128,6 +133,14 @@ let (|ListList|_|) = function
     | list when list |> List.forall (isList <||> isNull) -> Some ^ ListList list
     | _ -> None
 
+let (|GuidList|_|) = function 
+    | list when list |> List.forall (isGuid <||> isNull) -> Some ^ GuidList list
+    | _ -> None
+
+let (|GuidAndStringList|_|) = function 
+    | list when list |> List.forall (isGuid <||> isString <||> isNull) -> Some ^ GuidAndStringList list
+    | _ -> None
+
 let (|ArrayList|_|) = function 
     | list when list |> List.forall (isArray <||> isNull) -> Some ^ ArrayList list
     | _ -> None
@@ -143,12 +156,14 @@ let rec aggreagateListToSingleType jsonList =
         | JDateTimeOffset, true -> JDateTimeOffsetOption
         | JObject x, true -> JObjectOption x
         | JArray x, true -> JArrayOption x
+        | JGuid, true -> JGuidOption
         | x, _ -> x
 
     match jsonList with
     | EmptyList -> JEmptyObject
     | NullList -> JEmptyObjectOption
-    | StringList list -> JString |> getOptionType (list |> checkStringOption)
+    | GuidList list -> JGuid |> getOptionType (list |> checkGuidOption)
+    | StringList list | GuidAndStringList list -> JString |> getOptionType (list |> checkStringOption)
     | DateTimeOffsetList list -> JDateTimeOffset |> getOptionType (list |> checkDateTimeOption)
     | BoolList list -> JBool |> getOptionType (list |> checkBoolOption)
     | NumberList list ->
@@ -191,6 +206,7 @@ let rec aggreagateListToSingleType jsonList =
                                     | JNull 
                                     | JIntOption 
                                     | JFloatOption 
+                                    | JGuidOption
                                     | JEmptyObjectOption 
                                     | JBoolOption
                                     | JObjectOption _
@@ -209,47 +225,42 @@ let rec private extractObject json =
 
 let rec private fieldHandler fixName idGenerator collectionGenerator name json = 
     let getType { Name = _; Type = newType } = newType        
-    let getTemplate { Name = _; Type = _; Template = template } = template      
+    let getTemplate { Name = _; Type = _; Template = template } = template    
+    
+    let fieldGenerate typeId name rawName typeName template =
+        { TypeId = typeId; Name = name; RawName = rawName; Type = typeName; Template = template }
 
     match json with
-    | JBool ->                  { TypeId = None; Name = name |> fixName; RawName = name; Type = "bool"; Template = "%s" }
-    | JBoolOption ->            { TypeId = None; Name = name |> fixName; RawName = name; Type = "bool"; Template = "%s option" }
-    | JNull ->                  { TypeId = None; Name = name |> fixName; RawName = name; Type = "Object"; Template = "%s option" } 
-    | JInt ->                   { TypeId = None; Name = name |> fixName; RawName = name; Type = "int64"; Template = "%s" }
-    | JIntOption ->             { TypeId = None; Name = name |> fixName; RawName = name; Type = "int64"; Template = "%s option" }
-    | JFloat ->                 { TypeId = None; Name = name |> fixName; RawName = name; Type = "float"; Template = "%s" } 
-    | JFloatOption ->           { TypeId = None; Name = name |> fixName; RawName = name; Type = "float"; Template = "%s option" }
-    | JString ->                { TypeId = None; Name = name |> fixName; RawName = name; Type = "string"; Template = "%s" }
-    | JDateTimeOffset ->        { TypeId = None; Name = name |> fixName; RawName = name; Type = "DateTimeOffset"; Template = "%s" }
-    | JDateTimeOffsetOption ->  { TypeId = None; Name = name |> fixName; RawName = name; Type = "DateTimeOffset"; Template = "%s option" }
-    | JStringOption ->          { TypeId = None; Name = name |> fixName; RawName = name; Type = "string"; Template = "%s option" }
-    | JEmptyObjectOption ->     { TypeId = None; Name = name |> fixName; RawName = name; Type = "Object"; Template = "%s option" }
-    | JEmptyObject ->           { TypeId = None; Name = name |> fixName; RawName = name; Type = "Object"; Template = "%s" }
-    | JObject _ ->              { TypeId = Some ^ idGenerator ()
-                                  Name = name |> fixName
-                                  RawName = name;
-                                  Type = name |> fixName
-                                  Template = "%s" }
-    | JObjectOption _ ->        { TypeId = Some ^ idGenerator (); 
-                                  Name = name |> fixName
-                                  RawName = name;
-                                  Type = name |> fixName
-                                  Template = "%s option"}
-    | JArray obj -> let next = fieldHandler fixName idGenerator collectionGenerator name obj
+    | JBool ->                  fieldGenerate None (name |> fixName) name "bool" "%s"
+    | JBoolOption ->            fieldGenerate None (name |> fixName) name "bool" "%s option"
+    | JNull ->                  fieldGenerate None (name |> fixName) name "Object" "%s option"
+    | JInt ->                   fieldGenerate None (name |> fixName) name "int64" "%s"
+    | JIntOption ->             fieldGenerate None (name |> fixName) name "int64" "%s option"
+    | JGuid ->                  fieldGenerate None (name |> fixName) name "Guid" "%s"
+    | JGuidOption ->            fieldGenerate None (name |> fixName) name "Guid" "%s option"
+    | JFloat ->                 fieldGenerate None (name |> fixName) name "float" "%s"
+    | JFloatOption ->           fieldGenerate None (name |> fixName) name "float" "%s option"
+    | JString ->                fieldGenerate None (name |> fixName) name "string" "%s"
+    | JDateTimeOffset ->        fieldGenerate None (name |> fixName) name "DateTimeOffset" "%s"
+    | JDateTimeOffsetOption ->  fieldGenerate None (name |> fixName) name "DateTimeOffset" "%s option"
+    | JStringOption ->          fieldGenerate None (name |> fixName) name "string" "%s option"
+    | JEmptyObjectOption ->     fieldGenerate None (name |> fixName) name "Object" "%s option"
+    | JEmptyObject ->           fieldGenerate None (name |> fixName) name "Object" "%s"
+    | JObject _ ->              
+        let fixedName = (name |> fixName)
+        fieldGenerate (Some ^ idGenerator ()) fixedName name fixedName "%s"
+    | JObjectOption _ ->        
+        let fixedName = (name |> fixName)
+        fieldGenerate (Some ^ idGenerator ()) fixedName name fixedName "%s option"
+    | JArray obj -> 
+        let next = fieldHandler fixName idGenerator collectionGenerator name obj
 
-                    { TypeId = Some ^ idGenerator (); 
-                      Name = name |> fixName
-                      RawName = name;
-                      Type = next |> getType
-                      Template = next |> getTemplate |> collectionGenerator }
+        fieldGenerate (Some ^ idGenerator ()) (name |> fixName) name (next |> getType) (next |> getTemplate |> collectionGenerator)
     | JArrayOption obj -> 
-                    let next = fieldHandler fixName idGenerator collectionGenerator name obj
+        let next = fieldHandler fixName idGenerator collectionGenerator name obj
+        let optionTemplate = next |> getTemplate |> collectionGenerator |> sprintf "%s option"
 
-                    { TypeId = Some ^ idGenerator (); 
-                      Name = name |> fixName
-                      RawName = name;
-                      Type = next |> getType
-                      Template = next |> getTemplate |> collectionGenerator |> sprintf "%s option" }
+        fieldGenerate (Some ^ idGenerator ()) (name |> fixName) name (next |> getType) optionTemplate
     | _ -> failwith "translateToString unexcpected"
 
 let private typeHandler fixName (Some id) name fields = { Id = id; Name = name |> fixName; Fields = fields }

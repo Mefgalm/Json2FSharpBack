@@ -19,6 +19,8 @@ type JsonResult<'a> =
 type Json = 
     | JBool
     | JBoolOption
+    | JGuid
+    | JGuidOption
     | JNull
     | JInt
     | JIntOption
