@@ -7,13 +7,13 @@ open Microsoft.AspNetCore.Http
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open JsonParserCore
 open Microsoft.AspNetCore.Cors
-open System.Collections.Generic
 open Microsoft.Extensions.Primitives
 open Microsoft.Extensions.Logging
 
 type ListGeneratorType =
     | List
     | Array
+    | Sequence
     | CharpList
 
 type TypeGeneration =
@@ -45,6 +45,7 @@ let generationHandler =
            let collectionGenerator = function
                | List -> FsharpCommon.listGenerator
                | Array -> FsharpCommon.arrayGenerator
+               | Sequence -> FsharpCommon.seqGenerator
                | CharpList -> FsharpCommon.charpListGenerator
                
            let generate rootObjectName collectionGenerator view json =
