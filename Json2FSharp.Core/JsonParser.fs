@@ -87,11 +87,10 @@ let isArrayOption = function JArrayOption _ -> true | _ -> false
 let isObjectOption = function JObjectOption _ -> true | _ -> false
 let isNumberOption = function JIntOption | JFloatOption -> true | _ -> false
 let isGuidOption = function JGuidOption -> true | _ -> false
-let typeOrder = 
-    function 
+let numberTypeOrder = function 
     | JInt | JIntOption -> 1 
     | JFloat | JFloatOption -> 2
-    | _ -> failwith "Not number type"
+    | _ -> failwith "Not a number type"
 
 let checkStringOption = List.exists (isNull <||> isStringOption)
 let checkGuidOption = List.exists (isNull <||> isGuidOption)
@@ -114,7 +113,7 @@ let (|NumberList|_|) = function
     | _ -> None
 
 let (|StringList|_|) = function 
-    | list when list |> List.forall (isString <||> isNull) -> Some ^ StringList list
+    | list when list |> List.forall (isString <||> isDateTimeOffset <||> isGuid <||> isNull) -> Some ^ StringList list
     | _ -> None
 
 let (|DateTimeOffsetList|_|) = function 
@@ -131,14 +130,6 @@ let (|ObjectList|_|) = function
 
 let (|ListList|_|) = function 
     | list when list |> List.forall (isList <||> isNull) -> Some ^ ListList list
-    | _ -> None
-
-let (|GuidList|_|) = function 
-    | list when list |> List.forall (isGuid <||> isNull) -> Some ^ GuidList list
-    | _ -> None
-
-let (|GuidAndStringList|_|) = function 
-    | list when list |> List.forall (isGuid <||> isString <||> isNull) -> Some ^ GuidAndStringList list
     | _ -> None
 
 let (|ArrayList|_|) = function 
@@ -162,15 +153,20 @@ let rec aggreagateListToSingleType jsonList =
     match jsonList with
     | EmptyList -> JEmptyObject
     | NullList -> JEmptyObjectOption
-    | GuidList list -> JGuid |> getOptionType (list |> checkGuidOption)
-    | StringList list | GuidAndStringList list -> JString |> getOptionType (list |> checkStringOption)
+    | StringList list -> 
+        let getType = function
+        | list when list |> List.forall (isDateTimeOffset <||> isNull) -> JDateTimeOffset
+        | list when list |> List.forall (isGuid <||> isNull) -> JGuid
+        | _ -> JString
+
+        (getType list) |> getOptionType (list |> checkStringOption)
     | DateTimeOffsetList list -> JDateTimeOffset |> getOptionType (list |> checkDateTimeOption)
     | BoolList list -> JBool |> getOptionType (list |> checkBoolOption)
     | NumberList list ->
             list 
             |> List.filter (not << isNull)
             |> List.distinct
-            |> List.map(fun x -> (x, typeOrder x))
+            |> List.map(fun x -> (x, numberTypeOrder x))
             |> List.maxBy snd
             |> fst
             |> getOptionType (list |> checkNumberOption)

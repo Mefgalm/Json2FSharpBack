@@ -111,8 +111,28 @@ let ``Should identify guid in array`` () =
     | _ -> fail ()
 
 [<Fact>]
-let ``Should identify guid and string array as string list`` () =
+let ``Should identify guid and string as string list`` () =
     let input = @"{ ""arr"": [""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f"", ""some string""] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "string"; Template = "%s list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify dateTime and string as string list`` () =
+    let input = @"{ ""arr"": [""2012-04-23T18:25:43.511Z"", ""some string""] }"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+
+    match result with
+    | Ok [{Name = "Root"; Fields = [ { Name = "Arr"; Type = "string"; Template = "%s list" } ]}] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should identify dateTime and guid as string list`` () =
+    let input = @"{ ""arr"": [""2012-04-23T18:25:43.511Z"", ""f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f""] }"
 
     let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
 
@@ -463,7 +483,6 @@ let ``Should parse array with int64s and strings`` () =
 [<InlineData("\"test\"", "3")>]
 [<InlineData("\"test\"", "3.4")>]
 [<InlineData("\"test\"", "true")>]
-[<InlineData("\"test\"", "\"012-04-23T18:25:43.511Z\"")>]
 [<InlineData("\"test\"", "{}")>]
 [<InlineData("\"test\"", "[]")>]
 [<InlineData("2", "\"012-04-23T18:25:43.511Z\"")>]
@@ -482,7 +501,6 @@ let ``Should parse array with int64s and strings`` () =
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "3")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "3.4")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "true")>]
-[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "\"012-04-23T18:25:43.511Z\"")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "{}")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "[]")>]
 let ``Should parse array with floats and strings`` firstValue secondValue =
@@ -500,7 +518,6 @@ let ``Should parse array with floats and strings`` firstValue secondValue =
 [<InlineData("\"test\"", "3")>]
 [<InlineData("\"test\"", "3.4")>]
 [<InlineData("\"test\"", "true")>]
-[<InlineData("\"test\"", "\"2012-04-23T18:25:43.511Z\"")>]
 [<InlineData("\"test\"", "{}")>]
 [<InlineData("\"test\"", "[]")>]
 [<InlineData("2", "\"2012-04-23T18:25:43.511Z\"")>]
@@ -516,7 +533,7 @@ let ``Should parse array with floats and strings`` firstValue secondValue =
 [<InlineData("true", "[]")>]
 [<InlineData("\"012-04-23T18:25:43.511Z\"", "{}")>]
 [<InlineData("\"012-04-23T18:25:43.511Z\"", "[]")>]
-let ``Should parse array with floats and strings and null`` firstValue secondValue =
+let ``Should parse array with different types (object) and null as Object option`` firstValue secondValue =
     let root = "Root"
     let input = sprintf @"{ ""arr"": [%s, %s, null] }" firstValue secondValue
 
