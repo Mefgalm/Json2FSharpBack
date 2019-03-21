@@ -2,7 +2,6 @@
 
 open System
 open FParsec
-open Microsoft.FSharp
 open Types
 open System.Text.RegularExpressions
 
@@ -37,7 +36,12 @@ let stringOrDateTime (str: string) =
 
 let jstringOrDateOrGuid = stringLiteral |>> stringOrDateTime
 
-let jnumber = pfloat |>> (fun x -> if x = Math.Floor(x) then JInt else JFloat)
+let jnumber =
+    let options =
+        NumberLiteralOptions.AllowExponent |||
+        NumberLiteralOptions.AllowFraction |||
+        NumberLiteralOptions.AllowMinusSign
+    numberLiteral options "number" |>> (fun x -> if x.HasFraction then JFloat else JInt)
 
 let jtrue  = stringReturn "true"  JBool
 let jfalse = stringReturn "false" JBool
