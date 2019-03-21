@@ -2,7 +2,7 @@
 
 ### About
 
-This project provides generation F# records from Json
+This project provides generation F# records from Json.
 
 ### Todo
 1) Support array as root object
