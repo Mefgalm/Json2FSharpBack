@@ -6,9 +6,8 @@ This project provides generation F# records from Json.
 
 ### Todo
 1) Support array as root object
-2) Support primitives types as root object
-3) Refactor to be better open-source project
-4) Option to construct instance of json object
+2) Refactor to be better open-source project
+3) Option to construct instance of json object
 
 ### Sample
 Json 
