@@ -184,10 +184,13 @@ let ``Should parse int64`` () =
         pass ()
     | _ -> fail ()
 
-[<Fact>]
-let ``Should parse float`` () =
+[<Theory()>]
+[<InlineData("3.")>]
+[<InlineData("3.4")>]
+[<InlineData("3.0")>]
+let ``Should parse float`` (value: string) =
     let root = "Root"
-    let input = @"{ ""age"": 4.2 }"
+    let input = sprintf @"{ ""age"": %s }" value
 
     let result = generateRecords FsharpCommon.fixName root FsharpCommon.listGenerator input
 
