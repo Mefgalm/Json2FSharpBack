@@ -37,7 +37,10 @@ let stringOrDateTime (str: string) =
 let jstringOrDateOrGuid = stringLiteral |>> stringOrDateTime
 
 let jnumber =
-    let options = NumberLiteralOptions.AllowFraction ||| NumberLiteralOptions.AllowExponent
+    let options =
+        NumberLiteralOptions.AllowExponent |||
+        NumberLiteralOptions.AllowFraction |||
+        NumberLiteralOptions.AllowMinusSign
     numberLiteral options "number" |>> (fun x -> if x.HasFraction then JFloat else JInt)
 
 let jtrue  = stringReturn "true"  JBool

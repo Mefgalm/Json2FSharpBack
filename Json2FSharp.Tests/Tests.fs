@@ -172,10 +172,16 @@ let ``Should parse string`` () =
         pass ()
     | _ -> fail ()
 
-[<Fact>]
-let ``Should parse int64`` () =
+[<Theory()>]
+[<InlineData("4")>]
+[<InlineData("-4")>]
+[<InlineData("4e2")>]
+[<InlineData("-4e2")>]
+[<InlineData("4E-2")>]
+[<InlineData("4e+2")>]
+let ``Should parse int64`` (value: string) =
     let root = "Root"
-    let input = @"{ ""age"": 4 }"
+    let input = sprintf @"{ ""age"": %s }" value
 
     let result = generateRecords FsharpCommon.fixName root FsharpCommon.listGenerator input
 
@@ -184,10 +190,26 @@ let ``Should parse int64`` () =
         pass ()
     | _ -> fail ()
 
+[<Fact>]
+let ``Should fail on plus sign in numbers per specification`` () =
+    let root = "Root"
+    let input = @"{ ""age"": +4 }"
+
+    let result = generateRecords FsharpCommon.fixName root FsharpCommon.listGenerator input
+
+    match result with
+    | Ok _ ->    fail ()
+    | Error _ -> pass ()
+
 [<Theory()>]
 [<InlineData("3.")>]
 [<InlineData("3.4")>]
 [<InlineData("3.0")>]
+[<InlineData("-3.0")>]
+[<InlineData("3.e3")>]
+[<InlineData("3.02e+3")>]
+[<InlineData("3.02E-3")>]
+[<InlineData("3.02e3")>]
 let ``Should parse float`` (value: string) =
     let root = "Root"
     let input = sprintf @"{ ""age"": %s }" value
