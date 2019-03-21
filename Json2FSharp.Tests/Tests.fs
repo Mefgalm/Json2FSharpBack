@@ -528,7 +528,7 @@ let ``Should parse array with int64s and strings`` () =
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "true")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "{}")>]
 [<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"", "[]")>]
-let ``Should parse array with floats and strings`` firstValue secondValue =
+let ``Should parse array with types that cant be matched as object`` firstValue secondValue =
     let root = "Root"
     let input = sprintf @"{ ""arr"": [%s, %s] }" firstValue secondValue
 
