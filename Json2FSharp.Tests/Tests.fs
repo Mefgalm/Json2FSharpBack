@@ -504,7 +504,7 @@ let ``Should parse array with int64s and strings`` () =
     | _ -> fail ()
 
 
-[<Theory()>]
+[<Theory>]
 [<InlineData("\"test\"", "3")>]
 [<InlineData("\"test\"", "3.4")>]
 [<InlineData("\"test\"", "true")>]
@@ -733,4 +733,133 @@ let ``Should rename objects if with same names`` () =
                                        { TypeId = _; Name = "Next"; Type = "Next"; Template = "%s" }
                                      ] }
          ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should support array as root object`` () =
+    let input = "[]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Theory>]
+[<InlineData("\"test\"")>]
+[<InlineData("2")>]
+[<InlineData("2.1")>]
+[<InlineData("true")>]
+[<InlineData("\"012-04-23T18:25:43.511Z\"")>]
+[<InlineData("\"f27a5b7f-0b7c-4e79-aff5-bdb0d34f3a9f\"")>]
+let ``Should fail if primitives present when array is root object`` value =
+    let input = sprintf "[%s]" value
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok _ -> fail ()
+    | Error _ -> pass ()
+
+[<Fact>]
+let ``Should support object when array is root object`` () =
+    let input = "[{}]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should support arrays when array is root object`` () =
+    let input = "[[]]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should ignore null in array root object`` () =
+    let input = "[{}, null]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should ignore undefined in array root object`` () =
+    let input = "[{}, null]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should merge types in array root`` () =
+    let input = @"[{""a"": 2}, {""b"": ""str""}]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [{ TypeId = _; Name = "A"; Type = "int64"; Template = "%s option" }
+                                      { TypeId = _; Name = "B"; Type = "string"; Template = "%s option" }
+                                      ] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should aggregate types with same fields in array root`` () =
+    let input = @"[{""a"": 2}, {""a"": 5}]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [{ TypeId = _; Name = "A"; Type = "int64"; Template = "%s" } ] } ] -> pass ()
+    | _ -> fail ()
+
+
+[<Fact>]
+let ``Should ignore null and undefined when aggregate types in array root`` () =
+    let input = @"[{""a"": 2}, null, undefined, {""a"": 5}]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [{ TypeId = _; Name = "A"; Type = "int64"; Template = "%s" } ] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should create empty object when aggregate unmatched types in array root`` () =
+    let input = "[{}, []]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should ignore null and undefined when merge two diffrent types in array root`` ()  =
+    let input = "[{}, null, [], undefined]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
+    | _ -> fail ()
+
+[<Fact>]
+let ``Should extract object from nested arrays in array root`` () =
+    let input = "[[{}]]"
+
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
     | _ -> fail ()

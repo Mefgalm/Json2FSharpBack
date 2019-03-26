@@ -39,11 +39,22 @@ type OptionTypeConverter() =
 
 [<EntryPoint>]
 let main argv =
-    let test = @"{"""": ""4"" }"    
+    let test = @"[
+  {
+  ""name"" : ""John"",
+  ""last_Name"": null,
+  ""middle_name"": """"
+  },
+  null,
+  {
+  ""name"" : ""John"",
+  ""last_Name"": """",
+  ""middle_name"": """"}
+  ]"    
 
     //let testObj = Newtonsoft.Json.JsonConvert.DeserializeObject<Root>(test, [|OptionTypeConverter() :> JsonConverter|])
 
-    let result = (generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator test) |> FsharpNewtonsoftHandler.toView
+    let result = (generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator test) |> FsharpSimpleTypeHandler.toView
 
     printfn "%A" result
 

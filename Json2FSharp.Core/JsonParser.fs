@@ -48,6 +48,7 @@ let jfalse = stringReturn "false" JBool
 let jnull  = (stringReturn "null" JNull <|> stringReturn "undefined" JNull)
 
 let jvalue, jvalueRef = createParserForwardedToRef() 
+let jobjectList, jobjectListRef = createParserForwardedToRef() 
 
 let listBetweenStrings sOpen sClose pElement f =
     between (str sOpen) (str sClose)
@@ -58,6 +59,8 @@ let keyValue = tuple2 stringLiteral (ws >>. str ":" >>. ws >>. jvalue)
 let jlist   = listBetweenStrings "[" "]" jvalue JList
 let jobject = listBetweenStrings "{" "}" keyValue JObject
 
+do jobjectListRef := listBetweenStrings "[" "]" (jobject <|> jobjectList <|> jnull) JList
+
 do jvalueRef := choice [jobject
                         jlist
                         jnumber
@@ -66,7 +69,7 @@ do jvalueRef := choice [jobject
                         jnull
                         jfalse]
 
-let json = ws >>. jobject .>> ws .>> eof
+let json = ws >>. (jobject <|> jobjectList) .>> ws .>> eof
 
 let parseJsonString str = run json str
 
@@ -291,6 +294,16 @@ let private renameAllField types =
                                              | Some value -> { field with Type = value.Name }) })
 
 let private idGenerator () = Guid.NewGuid().ToString()
+
+let rec private exctractObjectFromArray jsonValue =
+    match jsonValue with
+    | JArray json -> exctractObjectFromArray json
+    | JArrayOption json -> exctractObjectFromArray json
+    | JObject _ as jobject -> jobject
+    | JObjectOption _ as jobject -> jobject
+    | JEmptyObjectOption
+    | JEmptyObject -> JObject []
+    | _ -> failwith "Unexpected"
                                             
 let private buildTypes rootObjectName fixName collectionGenerator json =  
     let build rootObjectName fixName collectionGenerator json =
@@ -315,7 +328,11 @@ let private buildTypes rootObjectName fixName collectionGenerator json =
                     |> List.choose(fun (key, id, v) -> match v with Some j -> Some (key, id, j) | None -> None)
              
                 tailDeep ((typeHandler fixName id name (newType |> List.map fst))::acc) (newJobjs @ xs)
-            | _ -> failwith "unexpected"
+            | (name, id, JList [])::[] ->
+                tailDeep acc [name, id, JObject []]
+            | (name, id, JList list)::[] -> 
+                tailDeep acc [name, id, list |> aggreagateListToSingleType |> exctractObjectFromArray]
+            | _ -> failwith "Unexpected"
 
         let types = tailDeep [] [rootObjectName |> fixName, Some ^ idGenerator(), json]
 
