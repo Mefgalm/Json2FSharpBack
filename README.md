@@ -5,7 +5,7 @@
 This project provides generation F# records from Json.
 
 ### Todo
-1) Support array as root object
+1) ~Support array as root object~
 2) Refactor to be better open-source project
 3) Option to construct instance of json object
 
