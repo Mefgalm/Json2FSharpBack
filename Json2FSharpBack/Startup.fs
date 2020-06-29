@@ -5,7 +5,7 @@ open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open Microsoft.AspNetCore.Http
 open FSharp.Control.Tasks.V2.ContextInsensitive
-open JsonParserCore
+open JsonBuilder
 open Microsoft.AspNetCore.Cors
 open Microsoft.Extensions.Primitives
 open Microsoft.Extensions.Logging

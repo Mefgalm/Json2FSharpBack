@@ -2,7 +2,7 @@ module Tests
 
 open System
 open Xunit
-open JsonParserCore
+open JsonBuilder
 open Types
 
 let pass () = Assert.True(true)
@@ -574,7 +574,7 @@ let ``Should parse array with different types (object) and null as Object option
 [<InlineData("2", "int64")>]
 [<InlineData("2.1", "float")>]
 [<InlineData("true", "bool")>]
-[<InlineData("\"012-04-23T18:25:43.511Z\"", "DateTimeOffset")>]
+[<InlineData("\"2012-04-23T18:25:43.511Z\"", "DateTimeOffset")>]
 let ``Should parse array and merge two objects with same type field`` value resType =
     let root = "Root"
     let input = sprintf @"{ ""arr"": [{ ""age"": %s }, { ""age"": %s }] }" value value
@@ -593,7 +593,7 @@ let ``Should parse array and merge two objects with same type field`` value resT
 [<InlineData("2", "int64")>]
 [<InlineData("2.1", "float")>]
 [<InlineData("true", "bool")>]
-[<InlineData("\"012-04-23T18:25:43.511Z\"", "DateTimeOffset")>]
+[<InlineData("\"2012-04-23T18:25:43.511Z\"", "DateTimeOffset")>]
 let ``Should parse array and merge two objects with same type field with null`` value resType =
     let root = "Root"
     let input = sprintf @"{ ""arr"": [{ ""age"": %s }, { ""age"": %s }, {""age"": null }] }" value value
@@ -670,7 +670,7 @@ let ``Should parse array and merge two objects with int64s and floats`` () =
 
 [<Fact>]
 let ``Should remove incorrect symbols`` () =
-    let rootName = "root!@#$^&*()+=\\.,~`¹;%:?*)! "
+    let rootName = "root!@#$^&*()+=\\.,~`â„–;%:?*)! "
     let input = @"{}"
 
     let result = generateRecords FsharpCommon.fixName rootName FsharpCommon.listGenerator input
@@ -863,3 +863,34 @@ let ``Should extract object from nested arrays in array root`` () =
     match result with
     | Ok [ { Name = "Root"; Fields = [] } ] -> pass ()
     | _ -> fail ()
+    
+[<Fact>]
+let ``Should not create another type if it already exists`` () =
+    let input = """{
+                  "top_by_one" : {                      
+                      "topFoo" : "lol",
+                      "topTeam2" : { "teamName" : "team!" }                      
+                  },
+                  "top_by_two" : {                      
+                      "topBar" : "lol? Are you crazy?",
+                      "topTeam" : { "teamName"  : "It's not a team!" }                     
+                  }
+                }"""
+                
+    let result = generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input
+    
+    match result with
+    | Ok [ { Name = "TopTeam"; Fields = [ { Name = "TeamName"; Type = "string"; Template = "%s"; RawName = "teamName" } ] }
+           
+           { Name = "TopByTwo"; Fields = [ { Name = "TopBar"; Type = "string"; Template = "%s"; RawName = "topBar" }
+                                           { Name = "TopTeam"; Type = "TopTeam"; Template = "%s"; RawName = "topTeam" } ] }
+           
+           { Name = "TopByOne"; Fields = [ { Name = "TopFoo"; Type = "string"; Template = "%s"; RawName = "topFoo" }
+                                           { Name = "TopTeam2"; Type = "TopTeam"; Template = "%s"; RawName = "topTeam2" } ] }
+           
+           { Name = "Root"; Fields = [ { Name = "TopByOne"; Type = "TopByOne"; Template = "%s"; RawName = "top_by_one" }
+                                       { Name = "TopByTwo"; Type = "TopByTwo"; Template = "%s"; RawName = "top_by_two" }
+           ] }
+            
+            ] -> pass ()
+    | _ -> fail ()    

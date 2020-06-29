@@ -10,6 +10,7 @@
     <Compile Include="FSharp\FsharpNewtonsoftHandler.fs" />
     <Compile Include="FSharp\FsharpSimpleTypeHandler.fs" />
     <Compile Include="JsonParser.fs" />
+    <Compile Include="JsonBuilder.fs" />
   </ItemGroup>
 
   <ItemGroup>
