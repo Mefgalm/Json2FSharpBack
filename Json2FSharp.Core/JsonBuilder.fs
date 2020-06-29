@@ -196,16 +196,41 @@ let rec private fieldHandler fixName idGenerator collectionGenerator name json (
         
     | JObjectOption _ ->        
         let fixedName = (name |> fixName)
-        fieldGenerate (Some ^ idGenerator ()) fixedName name fixedName "%s option"
-    | JArray obj -> 
-        let next = fieldHandler fixName idGenerator collectionGenerator name obj cachedFieldsDict
-
-        fieldGenerate (Some ^ idGenerator ()) (name |> fixName) name (next |> getType) (next |> getTemplate |> collectionGenerator)
+        match cachedFieldsDict.TryGetValue json with
+        | true, field ->
+            fieldGenerate field.TypeId fixedName name fixedName "%s option"
+        | false, _ ->
+            let field = fieldGenerate (Some ^ idGenerator ()) fixedName name fixedName "%s option"
+            cachedFieldsDict.Add(json, field)
+            field
+            
+    | JArray obj ->
+        let fixedName = (name |> fixName)
+        match cachedFieldsDict.TryGetValue json with
+        | true, field ->
+            let next = fieldHandler fixName idGenerator collectionGenerator name obj cachedFieldsDict
+            fieldGenerate field.TypeId fixedName name (next |> getType) (next |> getTemplate |> collectionGenerator)
+        | false, _ ->
+            let next = fieldHandler fixName idGenerator collectionGenerator name obj cachedFieldsDict
+            let field = fieldGenerate (Some ^ idGenerator ()) fixedName name (next |> getType) (next |> getTemplate |> collectionGenerator)
+            cachedFieldsDict.Add(json, field)
+            field
+        
     | JArrayOption obj -> 
-        let next = fieldHandler fixName idGenerator collectionGenerator name obj  cachedFieldsDict
-        let optionTemplate = next |> getTemplate |> collectionGenerator |> sprintf "%s option"
-        fieldGenerate (Some ^ idGenerator ()) (name |> fixName) name (next |> getType) optionTemplate
-    | _ -> failwith "translateToString unexcpected"
+        let fixedName = (name |> fixName)
+        match cachedFieldsDict.TryGetValue json with
+        | true, field ->
+            let next = fieldHandler fixName idGenerator collectionGenerator name obj cachedFieldsDict
+            let optionTemplate = next |> getTemplate |> collectionGenerator |> sprintf "%s option"
+            fieldGenerate field.TypeId fixedName name (next |> getType) optionTemplate
+        | false, _ ->
+            let next = fieldHandler fixName idGenerator collectionGenerator name obj  cachedFieldsDict
+            let optionTemplate = next |> getTemplate |> collectionGenerator |> sprintf "%s option"
+            let field = fieldGenerate (Some ^ idGenerator ()) fixedName name (next |> getType) optionTemplate
+            cachedFieldsDict.Add(json, field)
+            field
+            
+    | _ -> failwith "translateToString unexpected"
 
 let private typeHandler fixName (Some id) name fields = { Id = id; Name = name |> fixName; Fields = fields }
 

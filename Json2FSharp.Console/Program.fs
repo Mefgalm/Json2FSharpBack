@@ -4,6 +4,7 @@ open System.Threading
 open JsonBuilder
 open Newtonsoft.Json
 open System.Linq
+open System.Text
 open Microsoft.FSharp.Reflection
 
 type A = {
@@ -65,47 +66,23 @@ let main argv =
 }"""
                 
     let input2 = """{
-    "rating_value":"3.8",
-    "date_published":"2013-­04-­23"
+  "top_by_one" : [
+  {
+     "topFoo" : "lol",
+     "topTeam" : { "TeamName" : "team!" }
+  }
+  ],
+  "top_by_two" : [
+  {
+    "topFoo" : "lol? Are you crazy?",
+    "topTeam" : { "TeamName"  : "It's not a team!" }
+  }
+  ]
 }"""  
     
-    let dateFormats = [|"yyyy-MM-dd"; "dd/MM/yyyy"; "d/MM/yyyy"; "dd.MM.yyyy"; "yyyy-M-d"; "d.M.yyyy";
-     "dd-MM-yyyy"; "MM/dd/yyyy"; "d.MM.yyyy"; "d/M/yyyy"; "MM-dd-yyyy"; "dd.MM.yyyy."; "yyyy.MM.dd.";
-     "yyyy/MM/dd"; "yyyy. M. d"; "yyyy.M.d"; "yyyy.d.M"; "d.M.yyyy."; "d-M-yyyy"; "M/d/yyyy"; "yyyy/M/d"|]
     
-    let timeFormats = [|"HH:mm"
-                        "hh:mm tt"
-                        
-                        "HH:mm:ss"
-                        "hh:mm:ss tt"
-                        
-                        "HH:mm:ss.f"
-                        "hh:mm:ss.f tt"
-                        
-                        "HH:mm:ss.ff"
-                        "hh:mm:ss.ff tt"
-                        
-                        "HH:mm:ss.fff"
-                        "hh:mm:ss.fff tt"|]
+    let result = (generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input2) 
     
-    let mustHaveFormats =
-       [|"yyyy-MM-ddTHH:mm:ss.fff'Z'"|]
-    
-    let dateTimeFormats =
-       dateFormats
-       |> Array.map (fun date ->
-                     let dateAndTimeFormats = timeFormats |> Array.map (fun time -> sprintf "%s %s" date time)
-                     Array.append [|date|] dateAndTimeFormats)
-       |> Array.collect id
-       |> Array.append mustHaveFormats
-       
-    let isDateTime (line: string) =
-       DateTimeOffset.TryParseExact(line, dateTimeFormats, CultureInfo.InvariantCulture, DateTimeStyles.None)
-       |> fst
-       
-    printfn "%A" (isDateTime "2012-04-23T18:25:43.511Z")       
-    
-    let result = (generateRecords FsharpCommon.fixName "Root" FsharpCommon.listGenerator input2) |> FsharpSimpleTypeHandler.toView
-    
+    printfn "%A" result
     
     0
