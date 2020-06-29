@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Giraffe" Version="3.6.0" />
+    <PackageReference Include="Giraffe" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.2" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="1.1.0" />
   </ItemGroup>
