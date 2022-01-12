@@ -82,8 +82,7 @@ let configureApp (app : IApplicationBuilder) =
     app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
                                 b.AllowAnyHeader() |> ignore
                                 b.AllowAnyOrigin() |> ignore
-                                b.AllowAnyMethod() |> ignore
-                                b.AllowCredentials() |> ignore)) |> ignore
+                                b.AllowAnyMethod() |> ignore)) |> ignore
 
 let configureServices (services : IServiceCollection) =
     services.AddCors() |> ignore
