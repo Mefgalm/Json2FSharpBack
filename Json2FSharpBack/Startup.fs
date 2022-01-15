@@ -4,7 +4,6 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open Microsoft.AspNetCore.Http
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open JsonBuilder
 open Microsoft.AspNetCore.Cors
 open Microsoft.Extensions.Primitives
@@ -51,14 +50,13 @@ let generationHandler =
            let generate rootObjectName collectionGenerator view json =
                generateRecords FsharpCommon.fixName rootObjectName collectionGenerator json |> view
                
-           let! generationParams = ctx.BindModelAsync<GenerationParams>()
+           let! generationParams = ctx.BindModelAsync<GenerationParams>()        
 
            let result =
                (generate generationParams.RootObjectName (collectionGenerator generationParams.ListGeneratorType) (view generationParams.TypeGeneration) generationParams.Data)
            
            ctx |> addCorsHeadsHACK |> ignore
-
-           return! Giraffe.ResponseWriters.json result next ctx
+           return! json result next ctx
        }
 
 let submitCar : HttpHandler =
@@ -93,7 +91,7 @@ let configureApp (app : IApplicationBuilder) =
 
 let configureServices (services : IServiceCollection) =
     services.AddCors() |> ignore
-    services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
+    //services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
     services.AddGiraffe() |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =
