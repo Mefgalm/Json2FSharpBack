@@ -27,7 +27,7 @@ type GenerationParams =
       ListGeneratorType: ListGeneratorType 
       TypeGeneration:  TypeGeneration }
 
- let addCorsHeadsHACK (ctx: HttpContext) =
+let addCorsHeadsHACK (ctx: HttpContext) =
      ctx.Response.Headers.Add("Access-Control-Allow-Credentials", StringValues("true"))
      ctx.Response.Headers.Add("Access-Control-Allow-Headers", StringValues("content-type"))
      ctx.Response.Headers.Add("Access-Control-Allow-Methods", StringValues("POST"))
@@ -61,13 +61,20 @@ let generationHandler =
            return! Giraffe.ResponseWriters.json result next ctx
        }
 
+let submitCar : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
+        printfn "%A" ctx.Request.Path
+        (text "Not found") next ctx
+
 let webApp =
     choose [
+        GET >=> route "/ping" >=> text "pong" 
         subRouteCi "/api" (
             POST >=> 
                 choose [
                     route "/generate" >=> generationHandler
             ])
+        setStatusCode 404 >=> submitCar
     ]
 
 let errorHandler (ex : Exception) (logger : ILogger) =
