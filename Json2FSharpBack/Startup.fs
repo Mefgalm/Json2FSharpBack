@@ -27,7 +27,7 @@ type GenerationParams =
       TypeGeneration:  TypeGeneration }
 
 let addCorsHeadsHACK (ctx: HttpContext) =
-     ctx.Response.Headers.Add("Access-Control-Allow-Credentials", StringValues("true"))
+     //ctx.Response.Headers.Add("Access-Control-Allow-Credentials", StringValues("true"))
      ctx.Response.Headers.Add("Access-Control-Allow-Headers", StringValues("content-type"))
      ctx.Response.Headers.Add("Access-Control-Allow-Methods", StringValues("POST"))
      ctx.Response.Headers.Add("Access-Control-Allow-Origin", StringValues("*"))
@@ -59,11 +59,6 @@ let generationHandler =
            return! json result next ctx
        }
 
-let submitCar : HttpHandler =
-    fun (next : HttpFunc) (ctx : HttpContext) ->
-        printfn "%A" ctx.Request.Path
-        (text "Not found") next ctx
-
 let webApp =
     choose [
         GET >=> route "/ping" >=> text "pong" 
@@ -72,7 +67,6 @@ let webApp =
                 choose [
                     route "/generate" >=> generationHandler
             ])
-        setStatusCode 404 >=> submitCar
     ]
 
 let errorHandler (ex : Exception) (logger : ILogger) =
@@ -81,13 +75,16 @@ let errorHandler (ex : Exception) (logger : ILogger) =
     >=> ServerErrors.INTERNAL_ERROR ex.Message
 
 let configureApp (app : IApplicationBuilder) =
-    app.UseGiraffeErrorHandler(errorHandler)
-       .UseGiraffe webApp
-
     app.UseCors(new Action<_>(fun (b: Infrastructure.CorsPolicyBuilder) -> 
                                 b.AllowAnyHeader() |> ignore
                                 b.AllowAnyOrigin() |> ignore
-                                b.AllowAnyMethod() |> ignore)) |> ignore
+                                b.AllowAnyMethod() |> ignore
+                                //b.AllowCredentials() |> ignore
+                                )) |> ignore
+
+    app.UseGiraffeErrorHandler(errorHandler)
+       .UseGiraffe webApp
+
 
 let configureServices (services : IServiceCollection) =
     services.AddCors() |> ignore
