@@ -83,7 +83,7 @@ let configureApp (app : IApplicationBuilder) =
                                 )) |> ignore
 
     app.UseGiraffeErrorHandler(errorHandler)
-       .UseGiraffe webApp
+       .UseGiraffe(webApp)
 
 
 let configureServices (services : IServiceCollection) =
@@ -106,7 +106,7 @@ let main _ =
         .UseKestrel()
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
-        .ConfigureLogging(configureLogging)
+        .ConfigureLogging(configureLogging)    
         .Build()
         .Run()
     0

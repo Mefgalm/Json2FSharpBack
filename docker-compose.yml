@@ -1,0 +1,13 @@
+services:
+  back:
+    build: ./
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+    ports:
+      - "5000:5000"
+
+  front:
+    build:
+      context: ../../js/json2fsharp-front    
+    ports:
+      - "127.0.0.1:80:80"
